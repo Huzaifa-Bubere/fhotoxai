@@ -1,0 +1,217 @@
+.cluster-card {
+  border-radius: 8px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  flex: 1;
+  width: 100%;
+}
+
+.cluster-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.cluster-header {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  position: relative;
+  background: #fcfcfc;
+}
+
+.cluster-name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  flex-grow: 1;
+  color: #2d3748;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.face-count {
+  background-color: #f0f2f5;
+  color: #64748b;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid #e2e8f0;
+}
+
+.edit-name-btn {
+  background: none;
+  border: none;
+  color: #a0aec0;
+  cursor: pointer;
+  font-size: 14px;
+  margin-right: 6px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.edit-name-btn:hover {
+  background-color: #edf2f7;
+  color: #4a5568;
+}
+
+.sample-faces {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0;
+  background-color: #fff;
+  justify-content: center;
+  align-items: center;
+  min-height: 180px;
+}
+
+.cluster-actions {
+  padding: 12px;
+  display: flex;
+  justify-content: center;
+}
+
+.view-all-btn {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  width: 100%;
+}
+
+.view-all-btn:hover {
+  background-color: #2563eb;
+}
+
+/* Name editing form */
+.cluster-header form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.name-input {
+  font-size: 14px;
+  padding: 4px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  width: 100%;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.save-btn, .cancel-btn {
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: none;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.save-btn {
+  background-color: #10b981;
+  color: white;
+}
+
+.save-btn:hover {
+  background-color: #059669;
+}
+
+.cancel-btn {
+  background-color: #ef4444;
+  color: white;
+}
+
+.cancel-btn:hover {
+  background-color: #dc2626;
+}
+
+.save-btn:disabled, .cancel-btn:disabled {
+  background-color: #e2e8f0;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.cluster-link {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.view-all-hint {
+  padding: 8px 12px;
+  text-align: center;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+  background-color: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+  transition: all 0.2s;
+}
+
+.cluster-card:hover .view-all-hint {
+  background-color: #f1f5f9;
+  color: #3b82f6;
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+  /* Cluster card sizing controlled by grid */
+}
+
+@media (max-width: 768px) {
+  /* Cluster card sizing controlled by grid */
+  
+  .cluster-name {
+    font-size: 16px;
+  }
+  
+  .cluster-header {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Cluster card sizing controlled by grid */
+  
+  .cluster-name {
+    font-size: 14px;
+  }
+  
+  .face-count {
+    font-size: 12px;
+    padding: 3px 6px;
+  }
+  
+  .sample-faces {
+    padding: 8px;
+  }
+  
+  .view-all-hint {
+    font-size: 12px;
+    padding: 8px;
+  }
+}

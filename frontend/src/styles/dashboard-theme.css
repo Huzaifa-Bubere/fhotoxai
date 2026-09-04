@@ -1,0 +1,295 @@
+/* ============================================================
+   Dashboard Theme — Warm Orange (matching Landing Page)
+   Import this in any dashboard page for consistent theming.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* ---- Landing-page palette ---- */
+  --dash-orange: #f5821f;
+  --dash-orange-dark: #d86d13;
+  --dash-orange-light: rgba(245, 130, 31, 0.12);
+  --dash-orange-glow: rgba(245, 130, 31, 0.18);
+
+  --dash-ink: #1f1f1f;
+  --dash-ink-secondary: #444444;
+  --dash-muted: #666666;
+  --dash-muted-light: #999999;
+
+  --dash-paper: #f5f1ec;
+  --dash-paper-light: #fff8f2;
+  --dash-white: #ffffff;
+
+  --dash-border: rgba(37, 30, 24, 0.08);
+  --dash-border-strong: rgba(37, 30, 24, 0.16);
+
+  --dash-card-bg: rgba(255, 255, 255, 0.88);
+  --dash-card-shadow: 0 24px 55px -42px rgba(66, 35, 5, 0.25);
+  --dash-card-shadow-sm: 0 4px 12px -6px rgba(66, 35, 5, 0.18);
+
+  --dash-success: #059669;
+  --dash-success-bg: #ecfdf5;
+  --dash-danger: #dc2626;
+  --dash-danger-bg: #fef2f2;
+  --dash-info: #0284c7;
+  --dash-info-bg: #f0f9ff;
+
+  --dash-font-heading: 'Sora', 'Segoe UI', sans-serif;
+  --dash-font-body: 'Nunito', 'Segoe UI', sans-serif;
+  --dash-radius: 1.25rem;
+  --dash-radius-sm: 0.75rem;
+}
+
+/* ---- Page-level background ---- */
+.dashboard-themed {
+  background:
+    radial-gradient(circle at top left, rgba(245, 130, 31, 0.10), transparent 32%),
+    linear-gradient(180deg, #fff8f2 0%, #f5f1ec 42%, #f2ede7 100%) !important;
+  color: var(--dash-ink) !important;
+  font-family: var(--dash-font-body) !important;
+}
+
+/* ---- Dot-pattern overlay (replaces slate dots) ---- */
+.dashboard-themed .dash-dot-pattern {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(245, 130, 31, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(245, 130, 31, 0.06) 1px, transparent 1px);
+  background-size: 34px 34px;
+  opacity: 0.35;
+  mask-image: linear-gradient(180deg, rgba(0,0,0,0.8), transparent 80%);
+}
+
+/* ---- Ambient glow (replaces indigo glow) ---- */
+.dashboard-themed .dash-glow {
+  position: absolute;
+  top: -10%;
+  left: -5%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(245, 130, 31, 0.10) 0%, transparent 70%);
+  filter: blur(80px);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ---- Standard card ---- */
+.dashboard-themed .dash-card {
+  background: var(--dash-card-bg);
+  border: 1px solid var(--dash-border);
+  border-radius: var(--dash-radius);
+  box-shadow: var(--dash-card-shadow-sm);
+  overflow: hidden;
+}
+
+.dashboard-themed .dash-card:hover {
+  box-shadow: var(--dash-card-shadow);
+}
+
+/* ---- Section headings ---- */
+.dashboard-themed .dash-heading {
+  font-family: var(--dash-font-heading);
+  color: var(--dash-ink);
+  letter-spacing: -0.02em;
+}
+
+/* ---- Kicker / eyebrow label ---- */
+.dashboard-themed .dash-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--dash-orange-dark);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+
+/* ---- Primary button (orange) ---- */
+.dashboard-themed .dash-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.15rem;
+  background: var(--dash-orange);
+  color: var(--dash-white);
+  border: none;
+  border-radius: 999px;
+  font-weight: 800;
+  font-family: var(--dash-font-body);
+  cursor: pointer;
+  box-shadow: 0 12px 24px -16px rgba(217, 109, 19, 0.7);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.dashboard-themed .dash-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 30px -16px rgba(217, 109, 19, 0.85);
+}
+
+/* ---- Secondary button ---- */
+.dashboard-themed .dash-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  background: var(--dash-white);
+  color: var(--dash-orange-dark);
+  border: 1px solid rgba(245, 130, 31, 0.25);
+  border-radius: 999px;
+  font-weight: 700;
+  font-family: var(--dash-font-body);
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease;
+}
+
+.dashboard-themed .dash-btn-secondary:hover {
+  transform: translateY(-1px);
+  border-color: rgba(245, 130, 31, 0.5);
+}
+
+/* ---- Ghost / tertiary button ---- */
+.dashboard-themed .dash-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  background: transparent;
+  color: var(--dash-muted);
+  border: 1px solid var(--dash-border);
+  border-radius: 999px;
+  font-weight: 600;
+  font-family: var(--dash-font-body);
+  cursor: pointer;
+  transition: color 180ms ease, border-color 180ms ease;
+}
+
+.dashboard-themed .dash-btn-ghost:hover {
+  color: var(--dash-orange-dark);
+  border-color: rgba(245, 130, 31, 0.3);
+}
+
+/* ---- Metric card ---- */
+.dashboard-themed .dash-metric-card {
+  background: var(--dash-card-bg);
+  border: 1px solid var(--dash-border);
+  border-radius: var(--dash-radius);
+  padding: 1.35rem;
+  box-shadow: var(--dash-card-shadow-sm);
+}
+
+.dashboard-themed .dash-metric-card .metric-label {
+  font-size: 0.82rem;
+  color: var(--dash-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.dashboard-themed .dash-metric-card .metric-value {
+  font-family: var(--dash-font-heading);
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: var(--dash-ink);
+  margin-top: 0.25rem;
+}
+
+.dashboard-themed .dash-metric-card .metric-icon {
+  color: var(--dash-orange);
+}
+
+/* ---- Icon wrapper (orange tint) ---- */
+.dashboard-themed .dash-icon-wrap {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, rgba(245, 130, 31, 0.16), rgba(245, 130, 31, 0.06));
+  color: var(--dash-orange);
+}
+
+/* ---- Status pill ---- */
+.dashboard-themed .dash-status-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #059669;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dashboard-themed .dash-status-closed {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: #f5f1ec;
+  color: var(--dash-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ---- Input fields ---- */
+.dashboard-themed input[type="text"],
+.dashboard-themed input[type="email"],
+.dashboard-themed input[type="search"],
+.dashboard-themed input[type="password"],
+.dashboard-themed select,
+.dashboard-themed textarea {
+  border: 1px solid rgba(245, 130, 31, 0.18);
+  border-radius: var(--dash-radius-sm);
+  padding: 0.75rem 1rem;
+  background: #fffdf9;
+  color: var(--dash-ink);
+  font-family: var(--dash-font-body);
+  font-size: 0.9rem;
+  transition: border-color 200ms, box-shadow 200ms;
+}
+
+.dashboard-themed input:focus,
+.dashboard-themed select:focus,
+.dashboard-themed textarea:focus {
+  outline: none;
+  border-color: rgba(245, 130, 31, 0.6);
+  box-shadow: 0 0 0 3px rgba(245, 130, 31, 0.10);
+}
+
+/* ---- Scrollbar theming ---- */
+.dashboard-themed ::-webkit-scrollbar {
+  width: 6px;
+}
+.dashboard-themed ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.dashboard-themed ::-webkit-scrollbar-thumb {
+  background: rgba(245, 130, 31, 0.2);
+  border-radius: 99px;
+}
+.dashboard-themed ::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 130, 31, 0.35);
+}
+
+/* ---- Utility: hide text on mobile ---- */
+@media (max-width: 640px) {
+  .dashboard-themed .hide-on-mobile {
+    display: none !important;
+  }
+}

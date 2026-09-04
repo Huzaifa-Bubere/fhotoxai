@@ -1,0 +1,225 @@
+/* FolderList Component Styles - Enhanced with Date/Time Display */
+
+.folder-item {
+  margin-bottom: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.folder-item:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.folder-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  cursor: pointer;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  transition: background 0.2s ease;
+}
+
+.folder-header:hover {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+}
+
+.folder-main-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.folder-name {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 1rem;
+}
+
+.folder-info {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.folder-datetime {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-right: 1rem;
+}
+
+.datetime-compact {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.125rem;
+}
+
+.date-part,
+.time-part {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.date-part {
+  color: #475569;
+}
+
+.time-part {
+  font-family: monospace;
+  color: #64748b;
+}
+
+.folder-icon {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  transition: transform 0.2s ease;
+}
+
+.folder-icon.expanded {
+  transform: rotate(180deg);
+}
+
+.folder-details {
+  border-top: 1px solid #e2e8f0;
+  background: #fefefe;
+}
+
+.folder-datetime-detail {
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-bottom: 1px solid #e0f2fe;
+}
+
+.datetime-full {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #0369a1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.datetime-full strong {
+  color: #0c4a6e;
+}
+
+.subfolder-list {
+  padding: 0.5rem 1rem 0.5rem 1rem;
+}
+
+.subfolder-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.subfolder-item:last-child {
+  border-bottom: none;
+}
+
+.subfolder-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  flex: 1;
+}
+
+.subfolder-name {
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.875rem;
+}
+
+.photo-count {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.subfolder-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.subfolder-time {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-family: monospace;
+  font-weight: 500;
+}
+
+.view-photos-btn,
+.view-all-photos-btn {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.view-photos-btn:hover,
+.view-all-photos-btn:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.folder-actions {
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: center;
+}
+
+.view-all-photos-btn {
+  background: #10b981;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.view-all-photos-btn:hover {
+  background: #059669;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .folder-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .folder-datetime {
+    align-self: flex-end;
+    margin-right: 0;
+  }
+  
+  .datetime-compact {
+    flex-direction: row;
+    gap: 1rem;
+  }
+  
+  .subfolder-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .subfolder-meta {
+    align-self: flex-end;
+  }
+}

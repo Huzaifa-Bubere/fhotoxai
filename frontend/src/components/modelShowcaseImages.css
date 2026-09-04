@@ -1,0 +1,46 @@
+/* Model showcase image placeholders - Dark Theme */
+.demo-image-container {
+  position: relative !important;
+}
+
+.demo-image-container::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: linear-gradient(135deg, var(--color-bg) 0%, var(--color-surface) 100%) !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  color: var(--color-primary) !important;
+  z-index: 0 !important;
+}
+
+/* Safety image placeholder */
+.demo-image-container[data-model="safety"]::before {
+  background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-bg) 100%), 
+              url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%2300ff88" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>') !important;
+  background-size: cover, 80px !important;
+  background-position: center, center !important;
+  background-repeat: no-repeat !important;
+}
+
+/* Face clustering image placeholder */
+.demo-image-container[data-model="face-clustering"]::before {
+  background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-bg) 100%), 
+              url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%2300ff88" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>') !important;
+  background-size: cover, 80px !important;
+  background-position: center, center !important;
+  background-repeat: no-repeat !important;
+}
+
+/* Face recognition image placeholder */
+.demo-image-container[data-model="face-recognition"]::before {
+  background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-bg) 100%), 
+              url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%2300ff88" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>') !important;
+  background-size: cover, 80px !important;
+  background-position: center, center !important;
+  background-repeat: no-repeat !important;
+}

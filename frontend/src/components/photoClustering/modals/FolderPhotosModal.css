@@ -1,0 +1,338 @@
+/* FolderPhotosModal Component Styles */
+
+/* Modal Overlay */
+.photo-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.9);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+/* Modal Container */
+.photo-modal-container {
+  background: linear-gradient(135deg, rgba(30, 30, 46, 0.95) 0%, rgba(24, 24, 37, 0.95) 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  max-width: 1200px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+}
+
+/* Modal Header */
+.photo-modal-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.photo-modal-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.photo-modal-subtitle {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.photo-modal-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  font-size: 1.5rem;
+  padding: 0.5rem;
+  transition: color 0.3s ease;
+  line-height: 1;
+}
+
+.photo-modal-close:hover {
+  color: #fff;
+}
+
+/* Photos Grid Container */
+.photo-modal-grid-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2rem;
+}
+
+.photo-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Photo Card */
+.photo-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.photo-card:hover {
+  transform: scale(1.05);
+  border-color: rgba(139, 92, 246, 0.5);
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.3);
+}
+
+/* Photo Thumbnail */
+.photo-thumbnail-container {
+  width: 100%;
+  padding-top: 75%;
+  position: relative;
+  background: rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.photo-thumbnail {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-thumbnail-placeholder {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 2rem;
+}
+
+/* Photo Info */
+.photo-info {
+  padding: 0.75rem;
+}
+
+.photo-filename {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #fff;
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.photo-datetime {
+  font-size: 0.75rem;
+  color: rgba(139, 92, 246, 0.8);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  flex-wrap: wrap;
+}
+
+.photo-datetime span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.photo-datetime-time {
+  font-family: monospace;
+  color: rgba(139, 92, 246, 0.9);
+}
+
+.photo-metadata {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Loading State */
+.photo-modal-loading {
+  text-align: center;
+  padding: 3rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.125rem;
+}
+
+.photo-modal-empty {
+  text-align: center;
+  padding: 3rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.125rem;
+}
+
+/* Full Size Photo Modal */
+.fullsize-photo-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.95);
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.fullsize-photo-close {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  color: #fff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.fullsize-photo-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.fullsize-photo-image {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.fullsize-photo-info {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  color: #fff;
+  text-align: center;
+  max-width: 90%;
+  backdrop-filter: blur(10px);
+}
+
+.fullsize-photo-filename {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.fullsize-photo-datetime {
+  font-size: 0.875rem;
+  color: rgba(139, 92, 246, 0.9);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  flex-wrap: wrap;
+}
+
+.fullsize-photo-datetime span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.fullsize-photo-meta {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .photo-modal-overlay {
+    padding: 1rem;
+  }
+  
+  .photo-modal-container {
+    max-height: 95vh;
+  }
+  
+  .photo-modal-header {
+    padding: 1rem;
+  }
+  
+  .photo-modal-title {
+    font-size: 1.25rem;
+  }
+  
+  .photo-modal-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+  }
+  
+  .photo-modal-grid-container {
+    padding: 1rem;
+  }
+  
+  .fullsize-photo-overlay {
+    padding: 1rem;
+  }
+  
+  .fullsize-photo-close {
+    top: 1rem;
+    right: 1rem;
+    width: 40px;
+    height: 40px;
+    font-size: 1.25rem;
+  }
+  
+  .fullsize-photo-info {
+    bottom: 1rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* Scrollbar Styling for Modal */
+.photo-modal-grid-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.photo-modal-grid-container::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.photo-modal-grid-container::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.5);
+  border-radius: 4px;
+}
+
+.photo-modal-grid-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.7);
+}

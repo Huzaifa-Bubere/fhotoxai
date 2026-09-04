@@ -1,0 +1,82 @@
+# ============================================
+# Docker Compose for Event Photography System
+# ============================================
+# Services:
+#   - db:          PostgreSQL 17 + pgvector
+#   - general-api: General API on port 3001
+#   - ai-api:      AI Processing API on port 5001
+# ============================================
+
+services:
+  # ---- PostgreSQL with pgvector ----
+  db:
+    image: pgvector/pgvector:pg17
+    container_name: photo-clustering-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: digitalnexusai_emc_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backend/commons/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ---- General API (Port 3001) ----
+  general-api:
+    build:
+      context: ./backend
+      dockerfile: general_api/Dockerfile
+    container_name: photo-clustering-general-api
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: digitalnexusai_emc_db
+    ports:
+      - "3001:3001"
+    volumes:
+      - uploads:/app/uploads
+      - downloads:/app/downloads
+      - banners:/app/banners
+    depends_on:
+      db:
+        condition: service_healthy
+    command: python -m uvicorn general_api.main:app --host 0.0.0.0 --port 3001
+
+  # ---- AI Processing API (Port 5001) ----
+  ai-api:
+    build:
+      context: ./backend
+      dockerfile: ai_api/Dockerfile
+    container_name: photo-clustering-ai-api
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: digitalnexusai_emc_db
+    ports:
+      - "5001:5001"
+    volumes:
+      - uploads:/app/uploads
+      - downloads:/app/downloads
+    depends_on:
+      db:
+        condition: service_healthy
+    command: python -m uvicorn ai_api.main:app --host 0.0.0.0 --port 5001
+
+volumes:
+  pgdata:
+  uploads:
+  downloads:
+  banners:

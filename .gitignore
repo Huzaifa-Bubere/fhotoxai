@@ -1,0 +1,97 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Node.js
+node_modules
+dist
+dist-ssr
+*.local
+.npm
+.yarn
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.history/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.env
+.venv
+.python-version
+pip-log.txt
+pip-delete-this-directory.txt
+.coverage
+htmlcov/
+.pytest_cache/
+.coverage.*
+
+# FastAPI
+__pycache__/
+*.pyc
+.Python
+
+# Uploads directory (user uploaded content)
+uploads/
+
+# Embeddings and model files (generated content)
+embeddings/
+*.npy
+*.pkl
+*.h5
+*.pt
+*.pth
+*.onnx
+*.pb
+*.tflite
+
+# Keep checked-in application models, but exclude local training/reference data
+backend/dataset/
+backend/reference_faces/
+!backend/models/
+!backend/models/**
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Distribution / packaging
+/build/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Test coverage
+/coverage
+.nyc_output/
