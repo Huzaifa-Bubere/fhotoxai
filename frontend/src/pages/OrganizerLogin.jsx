@@ -75,7 +75,8 @@ const OrganizerLogin = () => {
 
     return (
         <div style={{
-            height: '100vh',
+            minHeight: 'calc(100dvh - 76px)',
+            height: 'auto',
             width: '100%',
             backgroundColor: '#fffdf9',
             backgroundImage: 'radial-gradient(rgba(37,30,24,0.08) 1.5px, transparent 1.5px)',
@@ -83,7 +84,7 @@ const OrganizerLogin = () => {
             color: '#1f1f1f',
             display: 'flex',
             flexDirection: 'column',
-            overflow: 'hidden',
+            overflow: 'visible',
             fontFamily: '"Inter", -apple-system, system-ui, sans-serif',
             position: 'relative'
         }}>
@@ -104,9 +105,11 @@ const OrganizerLogin = () => {
             <button
                 onClick={() => navigate('/')}
                 style={{
-                    position: 'absolute',
-                    top: '2rem',
-                    left: '2rem',
+                    position: 'relative',
+                    top: 'auto',
+                    left: 'auto',
+                    alignSelf: 'flex-start',
+                    margin: '1rem 2rem 0.25rem',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
@@ -137,7 +140,7 @@ const OrganizerLogin = () => {
                 pointerEvents: 'none',
                 zIndex: 0
             }} />
-            <div className="container" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 10 }}>
+            <div className="container" style={{ minHeight: 'calc(100dvh - 150px)', flex: '1 0 auto', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem 1rem 2rem', position: 'relative', zIndex: 10 }}>
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}

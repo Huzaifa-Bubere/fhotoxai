@@ -1,124 +1,62 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate, useParams, Link } from 'react-router-dom';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import {
-    Upload, Calendar, MapPin, ArrowLeft, CheckCircle,
-    FolderOpen, Image as ImageIcon, Clock, FileText,
-    UploadCloud, HardDrive, Trash2, Eye, Layout, ChevronRight,
-    MoreHorizontal, Camera, LogOut, Home, Bell, AlertCircle, Cpu, X, AlertTriangle
+    CheckCircle, FolderOpen, Image as ImageIcon, Clock, MapPin, Calendar,
+    UploadCloud, Trash2, Eye, Users, X, AlertTriangle, Layers, Film,
+    AlertCircle,
 } from 'lucide-react';
 import '../landing.css';
+import '../styles/workspace.css';
 import AILoader from '../components/ui/AILoader';
-import { eventAPI, photoAPI, API_BASE, AUTH_EXPIRED_EVENT, clearStoredAuth } from '../services/api';
-import { getPhotoUrl } from '../utils/photoClusteringApi';
+import PhotosTab from '../components/workspace/PhotosTab';
+import VideoWorkflow from '../components/workspace/VideoWorkflow';
+import {
+    eventAPI, photoAPI, API_BASE, AUTH_EXPIRED_EVENT, clearStoredAuth, trainingAPI,
+} from '../services/api';
 import { useToast } from '../context/ToastContext';
 
-// --- Shared Components (Mature SaaS) ---
+const TABS = [
+    { id: 'photos', label: 'Photos', icon: ImageIcon },
+    { id: 'videos', label: 'Videos', icon: Film },
+    { id: 'people', label: 'People', icon: Users },
+];
 
-const StandardCard = ({ children, style = {} }) => (
+const StatChip = ({ icon: Icon, label, value }) => (
     <div style={{
-        background: 'white',
-        border: '1px solid #E2E8F0',
-        borderRadius: '16px',
-        padding: '1.5rem',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
-        ...style
+        display: 'flex', alignItems: 'center', gap: '0.55rem',
+        padding: '0.55rem 0.95rem',
+        background: 'var(--ws-surface)', border: '1px solid var(--ws-border)',
+        borderRadius: '999px',
     }}>
-        {children}
-    </div>
-);
-
-const UploadActionCard = ({ title, description, icon: Icon, onClick, color = 'indigo', disabled = false, style = {} }) => {
-    const colorMap = {
-        indigo: { bg: '#EEF2FF', text: '#4F46E5', border: '#C7D2FE' },
-        blue: { bg: '#EFF6FF', text: '#2563EB', border: '#BFDBFE' }
-    };
-    const theme = colorMap[color];
-
-    return (
-        <motion.button
-            whileHover={disabled ? {} : { y: -2, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05)' }}
-            whileTap={disabled ? {} : { scale: 0.99 }}
-            onClick={disabled ? undefined : onClick}
-            disabled={disabled}
-            style={{
-                background: 'white',
-                border: '1px solid #E2E8F0',
-                borderRadius: '16px',
-                padding: '2rem',
-                textAlign: 'left',
-                cursor: disabled ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '1.25rem',
-                width: '100%',
-                transition: 'all 0.2s',
-                position: 'relative',
-                overflow: 'hidden',
-                opacity: disabled ? 0.5 : 1,
-                pointerEvents: disabled ? 'none' : 'auto',
-                ...style
-            }}
-        >
-            <div style={{
-                position: 'absolute', top: 0, left: 0, width: '100%', height: '4px',
-                background: theme.text
-            }} />
-
-            <div style={{
-                width: '56px', height: '56px',
-                borderRadius: '12px',
-                background: theme.bg,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: theme.text,
-                border: `1px solid ${theme.border}`
-            }}>
-                <Icon size={28} />
-            </div>
-
-            <div>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1E293B', marginBottom: '0.5rem' }}>{title}</h3>
-                <p style={{ fontSize: '0.9rem', color: '#64748B', lineHeight: 1.5 }}>{description}</p>
-            </div>
-        </motion.button>
-    );
-};
-
-const StatItem = ({ label, value, icon: Icon }) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: '#F8FAFC', borderRadius: '12px', border: '1px solid #F1F5F9' }}>
-        <div style={{ color: '#64748B' }}><Icon size={18} /></div>
-        <div>
-            <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1E293B', lineHeight: 1 }}>{value}</div>
-            <div style={{ fontSize: '0.75rem', fontWeight: '600', color: '#94A3B8', marginTop: '0.25rem' }}>{label}</div>
-        </div>
+        <Icon size={15} style={{ color: 'var(--ws-accent)' }} />
+        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--ws-text)' }}>{value}</span>
+        <span style={{ fontSize: '0.72rem', color: 'var(--ws-text-muted)' }}>{label}</span>
     </div>
 );
 
 const PhotographerEventPage = () => {
-    const navigate = useNavigate();
     const { eventId } = useParams();
     const { addToast } = useToast();
-    const [user, setUser] = useState(null);
 
     const [loading, setLoading] = useState(true);
     const [event, setEvent] = useState(null);
     const [uploadJobs, setUploadJobs] = useState([]);
+    const [user, setUser] = useState(null);
+    const [activeTab, setActiveTab] = useState('photos');
+    const [galleryVersion, setGalleryVersion] = useState(0);
 
-    // Upload State
+    // Photo upload state (existing behavior preserved)
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
-    const [uploadStats, setUploadStats] = useState({
-        totalFiles: 0,
-        uploadedFiles: 0
-    });
+    const [uploadStats, setUploadStats] = useState({ totalFiles: 0, uploadedFiles: 0 });
     const fileInputRef = useRef(null);
     const folderInputRef = useRef(null);
 
-    // Upload Complete Modal State
+    // Upload complete modal
     const [showCompleteModal, setShowCompleteModal] = useState(false);
     const [isMarkingComplete, setIsMarkingComplete] = useState(false);
 
-    // Folder View/Delete State
+    // Folder view/delete modals
     const [showViewModal, setShowViewModal] = useState(false);
     const [selectedFolder, setSelectedFolder] = useState(null);
     const [folderPhotos, setFolderPhotos] = useState([]);
@@ -127,14 +65,82 @@ const PhotographerEventPage = () => {
     const [folderToDelete, setFolderToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
+    // People tab data
+    const [metrics, setMetrics] = useState(null);
+    const [metricsLoading, setMetricsLoading] = useState(false);
+    const [metricsError, setMetricsError] = useState(null);
+
+    const uploadFinalized = event?.photos_upload_complete === 1;
+
     const handleAuthExpired = () => {
         clearStoredAuth();
         window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT, {
-            detail: {
-                message: 'Your session expired. Please log in again.',
-            },
+            detail: { message: 'Your session expired. Please log in again.' },
         }));
     };
+
+    const loadUploadHistory = useCallback(async () => {
+        try {
+            const response = await fetch(`${API_BASE}/events/${eventId}/uploads`, {
+                credentials: 'include',
+            });
+            if (response.ok) {
+                const data = await response.json();
+                const serverJobs = data.uploads || [];
+                setUploadJobs(prev => {
+                    const virtualJobs = prev.filter(j =>
+                        String(j.id).startsWith('virtual-') &&
+                        !serverJobs.some(sj => sj.folder_name === j.folder_name)
+                    );
+                    return [...virtualJobs, ...serverJobs];
+                });
+            } else if (response.status === 401) {
+                handleAuthExpired();
+            }
+        } catch (error) {
+            setUploadJobs([]);
+        }
+    }, [eventId]);
+
+    const loadEventData = useCallback(async () => {
+        try {
+            const result = await eventAPI.getById(eventId);
+            if (result && result.event) setEvent(result.event);
+            else if (result) setEvent(result);
+            await loadUploadHistory();
+            setLoading(false);
+        } catch (error) {
+            console.error("Failed to load event:", error);
+            addToast("Failed to load event details", "error");
+            setLoading(false);
+        }
+    }, [eventId, addToast, loadUploadHistory]);
+
+    useEffect(() => {
+        const storedUser = localStorage.getItem('photographer_user');
+        if (storedUser) setUser(JSON.parse(storedUser));
+        loadEventData();
+    }, [eventId, loadEventData]);
+
+    // Poll photo upload history while anything is active.
+    useEffect(() => {
+        const hasActiveJobs = uploadJobs.some(job =>
+            ['uploading', 'processing', 'in_progress', 'queued'].includes(job.status?.toLowerCase())
+        );
+        if (!isUploading && !hasActiveJobs) return undefined;
+        const interval = setInterval(() => { loadUploadHistory(); }, 3000);
+        return () => clearInterval(interval);
+    }, [isUploading, uploadJobs, loadUploadHistory]);
+
+    // Load People metrics lazily
+    useEffect(() => {
+        if (activeTab !== 'people' || metrics || metricsLoading) return;
+        setMetricsLoading(true);
+        trainingAPI.getMetrics(eventId)
+            .then((data) => setMetrics(data))
+            .catch((err) => setMetricsError(err.message || 'Failed to load metrics'))
+            .finally(() => setMetricsLoading(false));
+    }, [activeTab, eventId, metrics, metricsLoading]);
 
     const handleViewFolder = async (folderName) => {
         setSelectedFolder(folderName);
@@ -143,8 +149,7 @@ const PhotographerEventPage = () => {
         try {
             const data = await photoAPI.getFolderPhotos(null, eventId, folderName);
             setFolderPhotos(data || []);
-        } catch (error) {
-            console.error("Failed to load photos:", error);
+        } catch (_error) {
             addToast("Failed to load photos", "error");
         } finally {
             setLoadingPhotos(false);
@@ -160,83 +165,13 @@ const PhotographerEventPage = () => {
             setShowDeleteModal(false);
             setFolderToDelete(null);
             await loadUploadHistory();
-            await loadEventData();
+            loadEventData();
+            setGalleryVersion(v => v + 1);
         } catch (error) {
             console.error("Failed to delete folder:", error);
             addToast("Failed to delete folder", "error");
         } finally {
             setIsDeleting(false);
-        }
-    };
-
-
-    useEffect(() => {
-        const storedUser = localStorage.getItem('photographer_user');
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
-        loadEventData();
-    }, [eventId]);
-
-    // Polling for active uploads to show live stats
-    useEffect(() => {
-        let interval;
-        const hasActiveJobs = uploadJobs.some(job =>
-            ['uploading', 'processing', 'in_progress', 'queued'].includes(job.status?.toLowerCase())
-        );
-
-        if (isUploading || hasActiveJobs) {
-            interval = setInterval(() => {
-                loadUploadHistory();
-            }, 3000); // Poll every 3 seconds
-        }
-
-        return () => {
-            if (interval) clearInterval(interval);
-        };
-    }, [isUploading, uploadJobs]);
-
-    const loadEventData = async () => {
-        try {
-            const result = await eventAPI.getById(eventId);
-            if (result && result.event) {
-                setEvent(result.event);
-            } else if (result) {
-                setEvent(result);
-            }
-            await loadUploadHistory();
-            setLoading(false);
-        } catch (error) {
-            console.error("Failed to load event:", error);
-            addToast("Failed to load event details", "error");
-            setLoading(false);
-        }
-    };
-
-    const loadUploadHistory = async () => {
-        try {
-            // Using a mock fetch wrapper if API not explicit, assuming equivalent to previous code
-            const response = await fetch(`${API_BASE}/events/${eventId}/uploads`, {
-                credentials: 'include',
-            });
-            if (response.ok) {
-                const data = await response.json();
-                const serverJobs = data.uploads || [];
-
-                setUploadJobs(prev => {
-                    // Keep virtual jobs that haven't been picked up by the server yet
-                    // (Match by folder_name as a heuristic, or just clear if newer server jobs exist)
-                    const virtualJobs = prev.filter(j =>
-                        String(j.id).startsWith('virtual-') &&
-                        !serverJobs.some(sj => sj.folder_name === j.folder_name)
-                    );
-                    return [...virtualJobs, ...serverJobs];
-                });
-            } else if (response.status === 401) {
-                handleAuthExpired();
-            }
-        } catch (error) {
-            setUploadJobs([]);
         }
     };
 
@@ -263,10 +198,9 @@ const PhotographerEventPage = () => {
 
         try {
             const folderName = isFolder
-                ? validFiles[0]?.webkitRelativePath?.split('/')[0] || `Folder Upload`
+                ? validFiles[0]?.webkitRelativePath?.split('/')[0] || 'Folder Upload'
                 : `Batch Upload ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).replace(/:/g, '-')}`;
 
-            // Real-time: Add a "Virtual Job" to the history list immediately
             const virtualJob = {
                 id: 'virtual-' + Date.now(),
                 folder_name: folderName,
@@ -285,12 +219,7 @@ const PhotographerEventPage = () => {
                 (percent) => {
                     setUploadProgress(percent);
                     const uploadedCount = Math.floor((percent / 100) * validFiles.length);
-                    setUploadStats(prev => ({
-                        ...prev,
-                        uploadedFiles: uploadedCount
-                    }));
-
-                    // Update the virtual job in the list for real-time feel
+                    setUploadStats(prev => ({ ...prev, uploadedFiles: uploadedCount }));
                     setUploadJobs(prev => prev.map(job =>
                         job.id === virtualJob.id
                             ? { ...job, photos_uploaded: uploadedCount, progress: percent }
@@ -305,33 +234,18 @@ const PhotographerEventPage = () => {
                 addToast(result.message || `Uploaded ${result.uploaded} photo(s) successfully.`, 'success');
             }
 
-            // Once request returns, the job might still be 'processing' on backend
-            // loadUploadHistory will handle the update
             await loadUploadHistory();
-            await loadEventData();
-
+            loadEventData();
+            setGalleryVersion(v => v + 1);
         } catch (error) {
             console.error('Upload error:', error);
             addToast(error.message || 'Upload failed', 'error');
-            // Remove the virtual job if failed
             await loadUploadHistory();
         } finally {
             setIsUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
             if (folderInputRef.current) folderInputRef.current.value = '';
         }
-    };
-
-    const handleLogout = () => {
-        clearStoredAuth();
-        navigate('/photographer/login');
-    };
-
-    const formatTime = (timestamp) => {
-        if (!timestamp) return '--';
-        return new Date(timestamp).toLocaleDateString('en-US', {
-            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-        });
     };
 
     const handleMarkComplete = async () => {
@@ -346,7 +260,6 @@ const PhotographerEventPage = () => {
             });
 
             if (response.ok) {
-                const data = await response.json();
                 addToast('Upload marked as complete', 'success');
                 setShowCompleteModal(false);
                 await loadEventData();
@@ -363,586 +276,408 @@ const PhotographerEventPage = () => {
         }
     };
 
+    const formatTime = (timestamp) => {
+        if (!timestamp) return '--';
+        return new Date(timestamp).toLocaleDateString('en-US', {
+            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+    };
+
     if (loading) {
         return (
-            <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F8FAFC' }}>
+            <div className="ws-page" style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <AILoader active={true} text="SYNCING EVENT" />
             </div>
         );
     }
 
     return (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 40, backgroundColor: '#F8FAFC', fontFamily: '"Inter", -apple-system, sans-serif', paddingTop: '70px', boxSizing: 'border-box', overflowY: 'auto' }}>
+        <div className="ws-page" style={{ position: 'fixed', inset: 0, zIndex: 40, paddingTop: '76px', boxSizing: 'border-box', overflowY: 'auto' }}>
             <style>{`
-                .photographer-event-grid {
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 2rem;
-                }
-                .photographer-event-grid .upload-table th,
-                .photographer-event-grid .upload-table td {
-                    padding: 1rem 1.5rem;
-                }
+                @keyframes ws-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                .ws-event-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; max-width: 1200px; margin: 0 auto; padding: 0 1.5rem 3rem; }
+                .ws-event-toolbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
                 @media (max-width: 768px) {
-                    .photographer-event-grid {
-                        grid-template-columns: 1fr;
-                    }
-                    .photographer-event-content {
-                        padding: 1.5rem 1rem !important;
-                    }
-                    .photographer-event-header-row {
-                        flex-direction: column !important;
-                        align-items: flex-start !important;
-                    }
-                    .photographer-event-meta {
-                        flex-direction: column !important;
-                        gap: 0.5rem !important;
-                    }
-                    .photographer-event-header-row h1 {
-                        font-size: 1.5rem !important;
-                    }
-                    .photographer-event-grid .upload-table th,
-                    .photographer-event-grid .upload-table td {
-                        padding: 0.6rem 0.75rem;
-                        font-size: 0.8rem;
-                    }
-                    .photographer-event-grid .upload-table .hide-mobile {
-                        display: none;
-                    }
+                    .ws-event-toolbar { flex-direction: column; align-items: stretch; }
                 }
             `}</style>
 
-            {/* Internal header removed — global navbar handles navigation */}
-
-            <div className="photographer-event-content" style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1.5rem' }}>
-
-                {/* Header Section */}
-                <div style={{ marginBottom: '2.5rem' }}>
-                    <Link to="/photographer/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#64748B', textDecoration: 'none', marginBottom: '1rem', fontWeight: '500' }}>
-                        <ArrowLeft size={16} /> Back to Dashboard
-                    </Link>
-
-                    <div className="photographer-event-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-                        <div>
-                            <div style={{ display: 'inline-block', padding: '0.25rem 0.75rem', borderRadius: '100px', background: '#EEF2FF', color: '#4F46E5', fontSize: '0.75rem', fontWeight: '700', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>
-                                ASSIGNMENT # {event?.event_id || event?.id}
-                            </div>
-                            <h1 style={{ fontSize: '2.25rem', fontWeight: '800', color: '#1E293B', margin: 0, letterSpacing: '-0.025em', lineHeight: 1.2 }}>
-                                {event?.name}
-                            </h1>
-                            <div className="photographer-event-meta" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginTop: '1rem', color: '#64748B', fontSize: '0.95rem', flexWrap: 'wrap' }}>
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><MapPin size={16} /> {event?.location || 'TBD'}</span>
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Calendar size={16} /> {new Date(event?.date).toLocaleDateString()}</span>
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Clock size={16} /> {event?.event_time || 'All Day'}</span>
-                            </div>
+            {/* Event header + status */}
+            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1.5rem 1.25rem' }}>
+                <Link to="/photographer/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--ws-text-muted)', textDecoration: 'none', fontWeight: 500 }}>
+                    ← Back to Dashboard
+                </Link>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap', marginTop: '0.75rem' }}>
+                    <div>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.6rem' }}>
+                            <span style={{
+                                padding: '0.2rem 0.7rem', borderRadius: '999px',
+                                background: 'var(--ws-accent-soft)', color: 'var(--ws-accent)',
+                                fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.06em',
+                            }}>
+                                EVENT #{event?.id}
+                            </span>
+                            {uploadFinalized ? (
+                                <span className="ws-badge ws-badge--completed"><CheckCircle size={11} /> Finalized</span>
+                            ) : (
+                                <span className="ws-badge ws-badge--processing">Open for uploads</span>
+                            )}
                         </div>
-
-                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                            <StatItem icon={ImageIcon} value={event?.photo_count || 0} label="Total Photos" />
-
+                        <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', lineHeight: 1.2, color: 'var(--ws-text)' }}>
+                            {event?.name}
+                        </h1>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.1rem', marginTop: '0.6rem', color: 'var(--ws-text-secondary)', fontSize: '0.88rem', flexWrap: 'wrap' }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}><MapPin size={15} /> {event?.location || 'TBD'}</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}><Calendar size={15} /> {new Date(event?.date).toLocaleDateString()}</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}><Clock size={15} /> {event?.event_time || 'All Day'}</span>
                         </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.55rem', flexWrap: 'wrap' }}>
+                        <StatChip icon={ImageIcon} value={metrics?.totalPhotos ?? event?.photo_count ?? 0} label="photos" />
+                        <StatChip icon={Layers} value={metrics?.uniqueIdentities ?? 0} label="people" />
                     </div>
                 </div>
 
-                {/* Main Content Grid */}
-                <div className="photographer-event-grid">
-
-                    {/* Left Column: Actions */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        <h3 style={{ fontSize: '0.95rem', fontWeight: '700', color: '#64748B', letterSpacing: '0.05em' }}>ACTIONS</h3>
-
-                        {event?.photos_upload_complete === 1 && (
-                            <StandardCard style={{ background: '#ecfdf5', border: '1px solid #6ee7b7' }}>
-                                <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                                    <div style={{ minWidth: '24px', color: '#059669' }}><CheckCircle size={24} /></div>
-                                    <div style={{ fontSize: '0.85rem', color: '#047857', lineHeight: 1.5 }}>
-                                        <strong style={{ display: 'block', color: '#065f46', marginBottom: '0.25rem' }}>Upload Finalized</strong>
-                                        This event's upload has been marked as complete. Upload and delete actions are now disabled.
-                                    </div>
-                                </div>
-                            </StandardCard>
-                        )}
-
-                        <UploadActionCard
-                            title="Upload Folder"
-                            description={event?.photos_upload_complete === 1 ? "Upload disabled - marked complete" : "Bulk upload an entire directory structure at once."}
-                            icon={FolderOpen}
-                            color="blue"
-                            onClick={() => folderInputRef.current?.click()}
-                            disabled={isUploading || event?.photos_upload_complete === 1}
-                        />
-
-                        <UploadActionCard
-                            title="Upload Photos"
-                            description={event?.photos_upload_complete === 1 ? "Upload disabled - marked complete" : "Select generic image files (JPG, PNG) from your device."}
-                            icon={ImageIcon}
-                            color="indigo"
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={isUploading || event?.photos_upload_complete === 1}
-                        />
-
-
-                        <StandardCard style={{ marginTop: '1rem', background: '#F8FAFC', border: '1px dashed #E2E8F0' }}>
-                            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                                <div style={{ minWidth: '24px', color: '#64748B' }}><AlertCircle size={24} /></div>
-                                <div style={{ fontSize: '0.85rem', color: '#64748B', lineHeight: 1.5 }}>
-                                    <strong style={{ display: 'block', color: '#334155', marginBottom: '0.25rem' }}>File Requirements</strong>
-                                    Ensure all photos are high-resolution. RAW formats should be converted to JPEG/PNG for optimal processing speed.
-                                </div>
-                            </div>
-                        </StandardCard>
-                    </div>
-
-                    {/* Right Column: History */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <h3 style={{ fontSize: '0.95rem', fontWeight: '700', color: '#64748B', letterSpacing: '0.05em' }}>UPLOAD HISTORY</h3>
-                            <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#94A3B8' }}>{uploadJobs.length} Sessions</span>
-                        </div>
-
-                        <StandardCard style={{ padding: 0, overflow: 'hidden' }}>
-                            <div style={{ overflowX: 'auto' }}>
-                                <table className="upload-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-                                    <thead style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                                        <tr>
-                                            <th style={{ textAlign: 'left', padding: '1rem 1.5rem', fontWeight: '600', color: '#64748B', fontSize: '0.75rem', letterSpacing: '0.05em' }}>SOURCE</th>
-                                            <th style={{ textAlign: 'left', padding: '1rem 1.5rem', fontWeight: '600', color: '#64748B', fontSize: '0.75rem', letterSpacing: '0.05em' }}>COUNT</th>
-                                            <th className="hide-mobile" style={{ textAlign: 'left', padding: '1rem 1.5rem', fontWeight: '600', color: '#64748B', fontSize: '0.75rem', letterSpacing: '0.05em' }}>DATE</th>
-                                            <th style={{ textAlign: 'center', padding: '1rem 1.5rem', fontWeight: '600', color: '#64748B', fontSize: '0.75rem', letterSpacing: '0.05em' }}>STATUS</th>
-                                            <th style={{ textAlign: 'right', padding: '1rem 1.5rem', fontWeight: '600', color: '#64748B', fontSize: '0.75rem', letterSpacing: '0.05em' }}>ACTIONS</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {uploadJobs.length > 0 ? (
-                                            uploadJobs.map((job, index) => (
-                                                <tr key={index} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                                                    <td style={{ padding: '1rem 1.5rem', color: '#1E293B', fontWeight: '500' }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                                            <FolderOpen size={16} color="#94A3B8" />
-                                                            {job.folder_name || 'Manual Upload'}
-                                                        </div>
-                                                    </td>
-                                                    <td style={{ padding: '1rem 1.5rem', color: '#475569' }}>
-                                                        {job.photos_uploaded || job.total_photos || 0}
-                                                    </td>
-                                                    <td className="hide-mobile" style={{ padding: '1rem 1.5rem', color: '#94A3B8' }}>
-                                                        {formatTime(job.created_at)}
-                                                    </td>
-                                                    <td style={{ padding: '1rem 1.5rem', textAlign: 'center' }}>
-                                                        {(() => {
-                                                            const status = job.status?.toLowerCase() || '';
-                                                            const isDone = status === 'completed' || status === 'success' || status === 'done';
-                                                            const isFailed = status === 'failed' || status === 'error';
-                                                            const isUploading = status === 'uploading';
-
-                                                            return (
-                                                                <span style={{
-                                                                    display: 'inline-block', padding: '0.25rem 0.75rem', borderRadius: '100px',
-                                                                    fontSize: '0.75rem', fontWeight: '700',
-                                                                    background: isDone ? '#ECFDF5' : isFailed ? '#FEF2F2' : isUploading ? '#EEF2FF' : '#FFFBEB',
-                                                                    color: isDone ? '#059669' : isFailed ? '#DC2626' : isUploading ? '#4F46E5' : '#B45309',
-                                                                    border: `1px solid ${isDone ? '#D1FAE5' : isFailed ? '#FCA5A5' : isUploading ? '#C7D2FE' : '#FDE68A'}`
-                                                                }}>
-                                                                    {isDone ? 'DONE' : isFailed ? 'FAILED' : isUploading ? 'UPLOADING...' : 'PROCESSING'}
-                                                                </span>
-                                                            );
-                                                        })()}
-                                                    </td>
-                                                    <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
-                                                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                                                            <button
-                                                                onClick={() => handleViewFolder(job.folder_name)}
-                                                                style={{ padding: '0.4rem', borderRadius: '8px', border: '1px solid #E2E8F0', background: 'white', color: '#64748B', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                                                title="View Photos"
-                                                            >
-                                                                <Eye size={16} />
-                                                            </button>
-                                                            {event?.photos_upload_complete !== 1 && !job.id?.toString().startsWith('virtual-') && (
-                                                                <button
-                                                                    onClick={() => { setFolderToDelete(job.folder_name); setShowDeleteModal(true); }}
-                                                                    style={{ padding: '0.4rem', borderRadius: '8px', border: '1px solid #FEE2E2', background: '#FEF2F2', color: '#DC2626', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                                                    title="Delete Folder"
-                                                                >
-                                                                    <Trash2 size={16} />
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))
-                                        ) : (
-                                            <tr>
-                                                <td colSpan={4} style={{ padding: '3rem', textAlign: 'center', color: '#94A3B8' }}>
-                                                    No uploads recorded yet.
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                            {/* Upload Complete Button Area */}
-                            {event?.photos_upload_complete !== 1 && (
-                                <div style={{ padding: '1rem', borderTop: '1px solid #E2E8F0', background: '#F8FAFC' }}>
-                                    <button
-                                        onClick={() => setShowCompleteModal(true)}
-                                        style={{
-                                            width: '100%',
-                                            padding: '0.875rem 1.5rem',
-                                            borderRadius: '10px',
-                                            background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                                            color: 'white',
-                                            border: 'none',
-                                            fontSize: '0.95rem',
-                                            fontWeight: '600',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: '0.5rem',
-                                            boxShadow: '0 4px 6px -1px rgba(5, 150, 105, 0.2), 0 2px 4px -1px rgba(5, 150, 105, 0.1)',
-                                            transition: 'all 0.2s',
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.transform = 'translateY(-1px)';
-                                            e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(5, 150, 105, 0.3), 0 4px 6px -2px rgba(5, 150, 105, 0.1)';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.transform = 'translateY(0)';
-                                            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(5, 150, 105, 0.2), 0 2px 4px -1px rgba(5, 150, 105, 0.1)';
-                                        }}
-                                    >
-                                        <CheckCircle size={18} />
-                                        Mark Upload as Complete
-                                    </button>
-                                </div>
-                            )}
-                        </StandardCard>
-                    </div>
+                {/* Tabs */}
+                <div className="ws-tabs" role="tablist" aria-label="Event workspace sections" style={{ marginTop: '1.5rem' }}>
+                    {TABS.map((tab) => {
+                        const Icon = tab.icon;
+                        return (
+                            <button
+                                key={tab.id}
+                                role="tab"
+                                aria-selected={activeTab === tab.id}
+                                className="ws-tab"
+                                onClick={() => setActiveTab(tab.id)}
+                            >
+                                <Icon size={15} /> {tab.label}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 
-            {/* Upload Progress Modal */}
-            <AnimatePresence>
-                {isUploading && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        style={{
-                            position: 'fixed', bottom: '2rem', right: '2rem', width: '380px',
-                            background: 'white', borderRadius: '16px',
-                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                            border: '1px solid #E2E8F0', padding: '1.5rem', zIndex: 100
-                        }}
-                    >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{
-                                    width: '32px', height: '32px', borderRadius: '8px',
-                                    background: '#EEF2FF', color: '#4F46E5',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                }}>
-                                    {uploadProgress < 100 ? <Upload size={18} /> : <Cpu size={18} className="animate-pulse" />}
-                                </div>
-                                <div>
-                                    <div style={{ fontWeight: '700', color: '#1E293B', fontSize: '0.95rem' }}>
-                                        {uploadProgress < 100 ? 'Transferring Media...' : 'AI Processing...'}
-                                    </div>
-                                    <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
-                                        {uploadProgress < 100 ? 'Securely moving files' : 'Generating FaceNet Embeddings'}
+            {/* Tab panels */}
+            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem 3rem' }}>
+                {activeTab === 'photos' && (
+                    <div>
+                        {/* Upload actions (preserved behavior) */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.75rem' }}>
+                            {uploadFinalized && (
+                                <div className="ws-card" style={{ padding: '1rem 1.25rem', background: 'var(--ws-success-soft)', border: '1px solid #a7f3d0', display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                                    <CheckCircle size={20} style={{ color: 'var(--ws-success)', flexShrink: 0, marginTop: 2 }} />
+                                    <div style={{ fontSize: '0.85rem', color: '#065f46', lineHeight: 1.5 }}>
+                                        <strong>Upload finalized.</strong> Upload, delete and video import are disabled for this event.
                                     </div>
                                 </div>
-                            </div>
-                            <div style={{ fontSize: '0.875rem', fontWeight: '800', color: '#4F46E5' }}>{uploadProgress}%</div>
-                        </div>
-
-                        <div style={{ width: '100%', height: '8px', background: '#F1F5F9', borderRadius: '4px', overflow: 'hidden', marginBottom: '1rem' }}>
-                            <motion.div animate={{ width: `${uploadProgress}%` }} style={{ height: '100%', background: 'linear-gradient(90deg, #4F46E5, #6366F1)', borderRadius: '4px' }} />
-                        </div>
-
-                        <div style={{ padding: '0.75rem', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #F1F5F9' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
-                                <span style={{ color: '#64748B', fontWeight: '500' }}>Progress</span>
-                                <span style={{ color: '#1E293B', fontWeight: '700' }}>{uploadStats.uploadedFiles} / {uploadStats.totalFiles}</span>
-                            </div>
-                            <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
-                                Status: <span style={{ color: '#059669', fontWeight: '600' }}>{uploadProgress < 100 ? 'Uploading' : 'Live Syncing'}</span>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Upload Complete Confirmation Modal */}
-            <AnimatePresence>
-                {showCompleteModal && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        style={{
-                            position: 'fixed',
-                            inset: 0,
-                            background: 'rgba(0, 0, 0, 0.5)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            zIndex: 200,
-                            padding: '1rem'
-                        }}
-                        onClick={() => !isMarkingComplete && setShowCompleteModal(false)}
-                    >
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            onClick={(e) => e.stopPropagation()}
-                            style={{
-                                background: 'white',
-                                borderRadius: '16px',
-                                maxWidth: '500px',
-                                width: '100%',
-                                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-                                overflow: 'hidden'
-                            }}
-                        >
-                            <div style={{
-                                padding: '1.5rem',
-                                borderBottom: '1px solid #E2E8F0',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between'
-                            }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                    <div style={{
-                                        width: '40px',
-                                        height: '40px',
-                                        borderRadius: '10px',
-                                        background: '#FEF2F2',
-                                        color: '#DC2626',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}>
-                                        <AlertTriangle size={22} />
-                                    </div>
-                                    <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1E293B', margin: 0 }}>
-                                        Finalize Upload?
-                                    </h3>
-                                </div>
-                                <button
-                                    onClick={() => setShowCompleteModal(false)}
-                                    disabled={isMarkingComplete}
-                                    style={{
-                                        background: 'transparent',
-                                        border: 'none',
-                                        color: '#94A3B8',
-                                        cursor: 'pointer',
-                                        padding: '0.25rem'
-                                    }}
-                                >
-                                    <X size={20} />
-                                </button>
-                            </div>
-
-                            <div style={{ padding: '1.5rem' }}>
-                                <div style={{
-                                    background: '#FEF2F2',
-                                    border: '1px solid #FCA5A5',
-                                    borderRadius: '12px',
-                                    padding: '1rem',
-                                    marginBottom: '1.25rem'
-                                }}>
-                                    <p style={{
-                                        fontSize: '0.9rem',
-                                        color: '#991B1B',
-                                        lineHeight: 1.6,
-                                        margin: 0
-                                    }}>
-                                        <strong>Warning:</strong> Once you mark this upload as complete, you will <strong>no longer be able to upload or delete photos</strong> for this event. This action cannot be undone.
-                                    </p>
-                                </div>
-
-                                <p style={{ fontSize: '0.95rem', color: '#64748B', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-                                    Are you sure you want to finalize the upload for <strong style={{ color: '#1E293B' }}>{event?.name}</strong>? Please confirm that all photos have been uploaded successfully.
-                                </p>
-
-                                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                            )}
+                            {!uploadFinalized && (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
                                     <button
-                                        onClick={() => setShowCompleteModal(false)}
-                                        disabled={isMarkingComplete}
-                                        style={{
-                                            padding: '0.75rem 1.5rem',
-                                            borderRadius: '8px',
-                                            background: 'white',
-                                            border: '1px solid #E2E8F0',
-                                            color: '#64748B',
-                                            fontSize: '0.9rem',
-                                            fontWeight: '600',
-                                            cursor: isMarkingComplete ? 'not-allowed' : 'pointer',
-                                            opacity: isMarkingComplete ? 0.5 : 1
-                                        }}
+                                        className="ws-card"
+                                        onClick={() => folderInputRef.current?.click()}
+                                        disabled={isUploading}
+                                        style={{ padding: '1.25rem', display: 'flex', gap: '0.9rem', alignItems: 'center', cursor: isUploading ? 'not-allowed' : 'pointer', textAlign: 'left', border: '1px solid var(--ws-border)' }}
+                                        onMouseEnter={(e) => { if (!isUploading) e.currentTarget.style.borderColor = 'var(--ws-accent-border)'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--ws-border)'; }}
                                     >
-                                        Cancel
+                                        <div style={{ width: 44, height: 44, borderRadius: 11, background: 'var(--ws-accent-soft)', color: 'var(--ws-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                            <FolderOpen size={22} />
+                                        </div>
+                                        <div>
+                                            <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>Upload Folder</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--ws-text-muted)' }}>Bulk upload a directory at once</div>
+                                        </div>
                                     </button>
                                     <button
-                                        onClick={handleMarkComplete}
-                                        disabled={isMarkingComplete}
-                                        style={{
-                                            padding: '0.75rem 1.5rem',
-                                            borderRadius: '8px',
-                                            background: isMarkingComplete ? '#94A3B8' : 'linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)',
-                                            border: 'none',
-                                            color: 'white',
-                                            fontSize: '0.9rem',
-                                            fontWeight: '600',
-                                            cursor: isMarkingComplete ? 'not-allowed' : 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '0.5rem'
-                                        }}
+                                        className="ws-card"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={isUploading}
+                                        style={{ padding: '1.25rem', display: 'flex', gap: '0.9rem', alignItems: 'center', cursor: isUploading ? 'not-allowed' : 'pointer', textAlign: 'left', border: '1px solid var(--ws-border)' }}
+                                        onMouseEnter={(e) => { if (!isUploading) e.currentTarget.style.borderColor = 'var(--ws-accent-border)'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--ws-border)'; }}
                                     >
-                                        {isMarkingComplete ? 'Processing...' : (
-                                            <>
-                                                <CheckCircle size={18} />
-                                                Yes, Finalize Upload
-                                            </>
-                                        )}
+                                        <div style={{ width: 44, height: 44, borderRadius: 11, background: 'var(--ws-accent-soft)', color: 'var(--ws-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                            <ImageIcon size={22} />
+                                        </div>
+                                        <div>
+                                            <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>Upload Photos</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--ws-text-muted)' }}>Select JPG / PNG / WebP files</div>
+                                        </div>
                                     </button>
                                 </div>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                            )}
+                        </div>
 
-            {/* Folder Photos Modal */}
-            <AnimatePresence>
-                {showViewModal && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        style={{
-                            position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.7)',
-                            backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center',
-                            justifyContent: 'center', zIndex: 300, padding: '2rem'
-                        }}
-                        onClick={() => setShowViewModal(false)}
-                    >
-                        <motion.div
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
-                            onClick={(e) => e.stopPropagation()}
-                            style={{
-                                background: 'white', borderRadius: '24px', width: '100%',
-                                maxWidth: '1000px', maxHeight: '85vh', display: 'flex',
-                                flexDirection: 'column', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
-                            }}
-                        >
-                            <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <div>
-                                    <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#1E293B', margin: 0 }}>{selectedFolder}</h3>
-                                    <div style={{ fontSize: '0.85rem', color: '#64748B', marginTop: '0.25rem' }}>{folderPhotos.length} Photos in this batch</div>
+                        {/* Gallery with source filters */}
+                        <PhotosTab eventId={eventId} refreshKey={galleryVersion} />
+
+                        {/* Upload history */}
+                        <div style={{ marginTop: '2rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                                <h3 className="ws-section-title" style={{ margin: 0 }}>Upload history</h3>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--ws-text-faint)' }}>{uploadJobs.length} sessions</span>
+                            </div>
+                            <div className="ws-card" style={{ overflow: 'hidden' }}>
+                                <div style={{ overflowX: 'auto' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
+                                        <thead style={{ background: '#fafbfc', borderBottom: '1px solid var(--ws-border)' }}>
+                                            <tr>
+                                                <th style={{ textAlign: 'left', padding: '0.85rem 1.25rem', fontWeight: 600, color: 'var(--ws-text-muted)', fontSize: '0.72rem', letterSpacing: '0.06em' }}>SOURCE</th>
+                                                <th style={{ textAlign: 'left', padding: '0.85rem 1.25rem', fontWeight: 600, color: 'var(--ws-text-muted)', fontSize: '0.72rem', letterSpacing: '0.06em' }}>COUNT</th>
+                                                <th style={{ textAlign: 'left', padding: '0.85rem 1.25rem', fontWeight: 600, color: 'var(--ws-text-muted)', fontSize: '0.72rem', letterSpacing: '0.06em' }}>DATE</th>
+                                                <th style={{ textAlign: 'center', padding: '0.85rem 1.25rem', fontWeight: 600, color: 'var(--ws-text-muted)', fontSize: '0.72rem', letterSpacing: '0.06em' }}>STATUS</th>
+                                                <th style={{ textAlign: 'right', padding: '0.85rem 1.25rem', fontWeight: 600, color: 'var(--ws-text-muted)', fontSize: '0.72rem', letterSpacing: '0.06em' }}>ACTIONS</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {uploadJobs.length > 0 ? (
+                                                uploadJobs.map((job, index) => (
+                                                    <tr key={index} style={{ borderBottom: '1px solid #f1f2f4' }}>
+                                                        <td style={{ padding: '0.85rem 1.25rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                                            <FolderOpen size={15} style={{ color: 'var(--ws-text-faint)' }} />
+                                                            {job.folder_name || 'Manual Upload'}
+                                                        </td>
+                                                        <td style={{ padding: '0.85rem 1.25rem', color: 'var(--ws-text-secondary)' }}>
+                                                            {job.photos_uploaded || job.total_photos || 0}
+                                                        </td>
+                                                        <td style={{ padding: '0.85rem 1.25rem', color: 'var(--ws-text-faint)' }}>{formatTime(job.created_at)}</td>
+                                                        <td style={{ padding: '0.85rem 1.25rem', textAlign: 'center' }}>
+                                                            {(() => {
+                                                                const status = job.status?.toLowerCase() || '';
+                                                                const isDone = ['completed', 'success', 'done'].includes(status);
+                                                                const isFailed = ['failed', 'error'].includes(status);
+                                                                const isUploadingJob = status === 'uploading';
+                                                                return (
+                                                                    <span className={`ws-badge ${isDone ? 'ws-badge--completed' : isFailed ? 'ws-badge--failed' : isUploadingJob ? 'ws-badge--uploading' : 'ws-badge--processing'}`}>
+                                                                        {isDone ? 'DONE' : isFailed ? 'FAILED' : isUploadingJob ? 'UPLOADING…' : 'PROCESSING'}
+                                                                    </span>
+                                                                );
+                                                            })()}
+                                                        </td>
+                                                        <td style={{ padding: '0.85rem 1.25rem', textAlign: 'right' }}>
+                                                            <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
+                                                                <button className="ws-btn ws-btn--ghost" onClick={() => handleViewFolder(job.folder_name)} aria-label={`View folder ${job.folder_name}`} title="View photos">
+                                                                    <Eye size={15} />
+                                                                </button>
+                                                                {!uploadFinalized && !job.id?.toString().startsWith('virtual-') && (
+                                                                    <button
+                                                                        className="ws-btn ws-btn--danger"
+                                                                        onClick={() => { setFolderToDelete(job.folder_name); setShowDeleteModal(true); }}
+                                                                        aria-label={`Delete folder ${job.folder_name}`} title="Delete folder"
+                                                                    >
+                                                                        <Trash2 size={15} />
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr><td colSpan={5} style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--ws-text-faint)' }}>No uploads recorded yet.</td></tr>
+                                            )}
+                                        </tbody>
+                                    </table>
                                 </div>
-                                <button onClick={() => setShowViewModal(false)} style={{ background: '#F1F5F9', border: 'none', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748B' }}>
-                                    <X size={20} />
-                                </button>
-                            </div>
-
-                            <div style={{ flex: 1, overflowY: 'auto', padding: '2rem' }}>
-                                {loadingPhotos ? (
-                                    <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <AILoader active={true} text="FETCHING PHOTOS" />
-                                    </div>
-                                ) : (
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1.5rem' }}>
-                                        {folderPhotos.map((photo, i) => (
-                                            <motion.div
-                                                key={photo.id}
-                                                initial={{ opacity: 0, y: 10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: i * 0.05 }}
-                                                style={{ aspectRatio: '1', borderRadius: '12px', overflow: 'hidden', background: '#F8FAFC', border: '1px solid #F1F5F9' }}
-                                            >
-                                                <img
-                                                    src={getPhotoUrl(photo.file_path, true)}
-                                                    alt={photo.original_filename}
-                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                                    onError={(e) => e.target.src = 'https://via.placeholder.com/300?text=Error+Loading+Photo'}
-                                                />
-                                            </motion.div>
-                                        ))}
-                                        {folderPhotos.length === 0 && (
-                                            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem', color: '#94A3B8' }}>
-                                                <ImageIcon size={48} style={{ marginBottom: '1rem', opacity: 0.3 }} />
-                                                <p>No photos found in this folder.</p>
-                                            </div>
-                                        )}
+                                {!uploadFinalized && (
+                                    <div style={{ padding: '1rem', borderTop: '1px solid var(--ws-border)', background: '#fafbfc' }}>
+                                        <button className="ws-btn" style={{ width: '100%', background: 'var(--ws-success)', borderColor: 'var(--ws-success)', color: '#fff' }} onClick={() => setShowCompleteModal(true)}>
+                                            <CheckCircle size={16} /> Mark Upload as Complete
+                                        </button>
                                     </div>
                                 )}
                             </div>
-                        </motion.div>
-                    </motion.div>
+                        </div>
+                    </div>
                 )}
-            </AnimatePresence>
 
-            {/* Delete Folder Confirmation Modal */}
-            <AnimatePresence>
-                {showDeleteModal && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300, padding: '1rem' }}
-                        onClick={() => !isDeleting && setShowDeleteModal(false)}
-                    >
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            onClick={(e) => e.stopPropagation()}
-                            style={{ background: 'white', borderRadius: '16px', maxWidth: '450px', width: '100%', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', overflow: 'hidden' }}
-                        >
-                            <div style={{ padding: '1.5rem', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#FEF2F2', color: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Trash2 size={24} />
-                                </div>
-                                <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1E293B', margin: 0 }}>Delete Folder?</h3>
-                            </div>
-                            <div style={{ padding: '1.5rem' }}>
-                                <p style={{ fontSize: '0.95rem', color: '#64748B', lineHeight: 1.6, margin: 0 }}>
-                                    Are you sure you want to delete <strong style={{ color: '#1E293B' }}>{folderToDelete}</strong>?
-                                    This will permanently remove all photos in this folder from the event and the server.
-                                </p>
-                                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '2rem' }}>
-                                    <button
-                                        onClick={() => setShowDeleteModal(false)}
-                                        disabled={isDeleting}
-                                        style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', background: 'white', border: '1px solid #E2E8F0', color: '#64748B', fontSize: '0.9rem', fontWeight: '600', cursor: isDeleting ? 'not-allowed' : 'pointer' }}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={handleDeleteFolder}
-                                        disabled={isDeleting}
-                                        style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', background: isDeleting ? '#94A3B8' : '#DC2626', border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: '600', cursor: isDeleting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                                    >
-                                        {isDeleting ? 'Deleting...' : (
-                                            <>
-                                                <Trash2 size={18} /> Delete Folder
-                                            </>
-                                        )}
-                                    </button>
-                                </div>
-                            </div>
-                        </motion.div>
-                    </motion.div>
+                {activeTab === 'videos' && (
+                    <VideoWorkflow
+                        eventId={eventId}
+                        uploadFinalized={uploadFinalized}
+                        onGalleryChanged={() => setGalleryVersion(v => v + 1)}
+                    />
                 )}
-            </AnimatePresence>
 
-            {/* Inputs */}
+                {activeTab === 'people' && (
+                    <div>
+                        {metricsLoading ? (
+                            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--ws-text-muted)' }}>
+                                <AILoader active text="LOADING METRICS" />
+                            </div>
+                        ) : metricsError ? (
+                            <div className="ws-card" style={{ padding: '1.5rem', color: 'var(--ws-danger)', fontSize: '0.88rem' }}>
+                                {metricsError}
+                            </div>
+                        ) : (
+                            <>
+                                <div className="ws-counter-grid" style={{ marginBottom: '1.25rem' }}>
+                                    <div className="ws-counter ws-counter--accent">
+                                        <div className="ws-counter__value">{metrics?.totalPhotos ?? 0}</div>
+                                        <div className="ws-counter__label">Photos</div>
+                                    </div>
+                                    <div className="ws-counter">
+                                        <div className="ws-counter__value">{metrics?.totalFaces ?? 0}</div>
+                                        <div className="ws-counter__label">Faces detected</div>
+                                    </div>
+                                    <div className="ws-counter">
+                                        <div className="ws-counter__value">{metrics?.uniqueIdentities ?? 0}</div>
+                                        <div className="ws-counter__label">People grouped</div>
+                                    </div>
+                                    <div className="ws-counter">
+                                        <div className="ws-counter__value">{metrics?.attendeeCount ?? metrics?.attendee_count ?? 0}</div>
+                                        <div className="ws-counter__label">Registered attendees</div>
+                                    </div>
+                                </div>
+                                <div className="ws-card" style={{ padding: '1.25rem', display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                                    <AlertCircle size={18} style={{ color: 'var(--ws-accent)', flexShrink: 0, marginTop: 2 }} />
+                                    <div style={{ fontSize: '0.85rem', color: 'var(--ws-text-secondary)', lineHeight: 1.55 }}>
+                                        <strong style={{ display: 'block', color: 'var(--ws-text)' }}>Clustering runs from the organizer dashboard</strong>
+                                        Photo grouping is started by the organizer through the existing workflow
+                                        (Organizer Dashboard → Clustering). Importing video photos marks the event
+                                        as needing an update but never rebuilds existing groups automatically.
+                                    </div>
+                                </div>
+                                <a
+                                    href="/photo-clustering"
+                                    className="ws-btn ws-btn--primary"
+                                    style={{ marginTop: '1.25rem', textDecoration: 'none' }}
+                                >
+                                    <Users size={15} /> Open People / Clustering screen
+                                </a>
+                            </>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Upload progress panel (existing behavior; upload duration only) */}
+            {isUploading && (
+                <div className="ws-card" style={{ position: 'fixed', bottom: '2rem', right: '2rem', width: 340, padding: '1.25rem', zIndex: 100, boxShadow: 'var(--ws-shadow-lg)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                            <UploadCloud size={18} style={{ color: 'var(--ws-accent)' }} />
+                            <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>Transferring photos…</div>
+                        </div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--ws-accent)' }}>{uploadProgress}%</div>
+                    </div>
+                    <div className="ws-progress">
+                        <div className="ws-progress__bar" style={{ width: `${uploadProgress}%` }} />
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--ws-text-muted)', marginTop: '0.6rem' }}>
+                        {uploadStats.uploadedFiles} / {uploadStats.totalFiles} files (file transfer only)
+                    </div>
+                </div>
+            )}
+
+            {/* Finalize upload confirmation */}
+            {showCompleteModal && (
+                <div role="dialog" aria-modal="true" aria-label="Finalize uploads"
+                    onMouseDown={(e) => { if (e.target === e.currentTarget && !isMarkingComplete) setShowCompleteModal(false); }}
+                    style={{ position: 'fixed', inset: 0, background: 'rgba(17,24,39,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '1rem' }}>
+                    <div className="ws-card" style={{ maxWidth: 480, width: '100%', overflow: 'hidden' }}>
+                        <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--ws-border)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--ws-danger-soft)', color: 'var(--ws-danger)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <AlertTriangle size={20} />
+                            </div>
+                            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0 }}>Finalize upload?</h3>
+                            <button className="ws-btn ws-btn--ghost" style={{ marginLeft: 'auto' }} aria-label="Close dialog" onClick={() => setShowCompleteModal(false)} disabled={isMarkingComplete}>
+                                <X size={18} />
+                            </button>
+                        </div>
+                        <div style={{ padding: '1.5rem' }}>
+                            <div style={{ background: 'var(--ws-danger-soft)', border: '1px solid #fca5a5', borderRadius: 12, padding: '1rem', marginBottom: '1rem', fontSize: '0.88rem', color: '#991b1b', lineHeight: 1.6 }}>
+                                Once finalized you can no longer upload or delete photos or videos for this event. This cannot be undone.
+                            </div>
+                            <p style={{ fontSize: '0.9rem', color: 'var(--ws-text-secondary)', lineHeight: 1.6, margin: 0 }}>
+                                Finalize uploads for <strong style={{ color: 'var(--ws-text)' }}>{event?.name}</strong>?
+                            </p>
+                            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+                                <button className="ws-btn" onClick={() => setShowCompleteModal(false)} disabled={isMarkingComplete}>Cancel</button>
+                                <button className="ws-btn ws-btn--primary" onClick={handleMarkComplete} disabled={isMarkingComplete}>
+                                    {isMarkingComplete ? 'Submitting…' : (<><CheckCircle size={15} /> Yes, finalize</>)}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Folder photos modal */}
+            {showViewModal && (
+                <div role="dialog" aria-modal="true" aria-label={`Folder ${selectedFolder} photos`}
+                    onMouseDown={(e) => { if (e.target === e.currentTarget) setShowViewModal(false); }}
+                    style={{ position: 'fixed', inset: 0, background: 'rgba(17,24,39,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300, padding: '1.5rem' }}>
+                    <div className="ws-card" style={{ width: '100%', maxWidth: 960, maxHeight: '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                        <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--ws-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div>
+                                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>{selectedFolder}</h3>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--ws-text-muted)', marginTop: '0.2rem' }}>
+                                    {folderPhotos.length} photos in this session
+                                </div>
+                            </div>
+                            <button className="ws-btn ws-btn--ghost" aria-label="Close folder view" onClick={() => setShowViewModal(false)}>
+                                <X size={18} />
+                            </button>
+                        </div>
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
+                            {loadingPhotos ? (
+                                <AILoader active text="FETCHING PHOTOS" />
+                            ) : (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '1rem' }}>
+                                    {folderPhotos.map((photo) => (
+                                        <div key={photo.id} style={{ aspectRatio: '1', borderRadius: 12, overflow: 'hidden', background: '#f1f2f4', border: '1px solid var(--ws-border)' }}>
+                                            <img
+                                                src={photo.file_path}
+                                                alt={photo.original_filename}
+                                                loading="lazy"
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                onError={(e) => { e.currentTarget.style.opacity = 0.2; }}
+                                            />
+                                        </div>
+                                    ))}
+                                    {folderPhotos.length === 0 && (
+                                        <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: 'var(--ws-text-faint)' }}>
+                                            <ImageIcon size={36} style={{ opacity: 0.3, marginBottom: '0.5rem' }} />
+                                            <p>No photos found in this folder.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete folder confirmation */}
+            {showDeleteModal && (
+                <div role="dialog" aria-modal="true" aria-label="Delete folder"
+                    onMouseDown={(e) => { if (e.target === e.currentTarget && !isDeleting) setShowDeleteModal(false); }}
+                    style={{ position: 'fixed', inset: 0, background: 'rgba(17,24,39,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300, padding: '1rem' }}>
+                    <div className="ws-card" style={{ maxWidth: 440, width: '100%', overflow: 'hidden' }}>
+                        <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--ws-border)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--ws-danger-soft)', color: 'var(--ws-danger)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Trash2 size={20} />
+                            </div>
+                            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0 }}>Delete folder?</h3>
+                        </div>
+                        <div style={{ padding: '1.5rem' }}>
+                            <p style={{ fontSize: '0.9rem', color: 'var(--ws-text-secondary)', lineHeight: 1.6, margin: 0 }}>
+                                Permanently delete <strong style={{ color: 'var(--ws-text)' }}>{folderToDelete}</strong> and
+                                every photo in it from the event and the server?
+                            </p>
+                            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+                                <button className="ws-btn" onClick={() => setShowDeleteModal(false)} disabled={isDeleting}>Cancel</button>
+                                <button className="ws-btn ws-btn--danger" onClick={handleDeleteFolder} disabled={isDeleting}>
+                                    {isDeleting ? 'Deleting…' : (<><Trash2 size={15} /> Delete</>)}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Hidden file inputs (existing behavior) */}
             <input type="file" ref={fileInputRef} multiple accept="image/*" style={{ display: 'none' }} onChange={(e) => handleFileSelect(e, false)} />
             <input type="file" ref={folderInputRef} webkitdirectory="" directory="" multiple style={{ display: 'none' }} onChange={(e) => handleFileSelect(e, true)} />
         </div>

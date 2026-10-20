@@ -38,7 +38,7 @@
   --color-background: var(--color-bg);
   --color-white: #FFFFFF;
   /* Sidebar removed */
-  --header-height: 70px;
+  --header-height: 76px;
   /* Safe Area Variables (Industry Grade) */
   --safe-top: env(safe-area-inset-top, 20px);
   --safe-bottom: env(safe-area-inset-bottom, 20px);
@@ -115,7 +115,7 @@ body {
   flex: 1;
   margin-left: 0;
   padding: 2rem;
-  padding-top: calc(70px + var(--safe-top)); /* Header height + safe top */
+  padding-top: calc(76px + var(--safe-top)); /* Header height + safe top */
   padding-bottom: calc(2rem + var(--safe-bottom));
   max-width: 100%;
   width: 100%;

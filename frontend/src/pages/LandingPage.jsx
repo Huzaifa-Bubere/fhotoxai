@@ -26,8 +26,8 @@ import {
     Users,
     Youtube,
 } from 'lucide-react';
-import heroBackdrop from '../assets/hero-abstract.jpg';
-import heroCamera from '../assets/hero-camera-3d.png';
+import heroBackdrop from '../assets/hero-event-background.webp';
+import heroPhotoCluster from '../assets/hero-photo-cluster-3d.webp';
 import './landing-photo.css';
 
 const scaleCards = [
@@ -145,7 +145,9 @@ function LandingPage() {
 
                 <header className="landing-hero-header">
                     <a className="brand-wrap" href="#top" aria-label="PhotoCluster AI home">
-                        <div className="brand-logo">PC</div>
+                        <div className="brand-logo">
+                            <img src="/photocluster-logo.png" alt="" width="48" height="48" />
+                        </div>
                         <div className="brand-copy">
                             <span className="brand-name">PhotoCluster AI</span>
                             <span className="brand-tag">Event photo delivery</span>
@@ -174,10 +176,10 @@ function LandingPage() {
                     <div className="landing-hero-copy">
                         <span className="landing-eyebrow">
                             <Sparkles size={16} />
-                             event photo sharing
+                            one gallery for every guest
                         </span>
 
-                        <h1>One upload transforms every moment into lasting memories.</h1>
+                        <h1>Every moment, found by the people who were there.</h1>
 
                         <p>
                             Bring organizers, photographers, and attendees into one flow where photos are uploaded once,
@@ -238,7 +240,7 @@ function LandingPage() {
                     <div className="landing-hero-visual">
                         <div className="hero-visual-card">
                             <div className="hero-visual-chip">Live match engine</div>
-                            <img src={heroCamera} alt="Abstract camera illustration" />
+                            <img src={heroPhotoCluster} alt="Event photo cards grouped around an AI face match" />
 
                             <div className="hero-visual-metrics">
                                 <div>
@@ -274,7 +276,7 @@ function LandingPage() {
                     <span className="section-kicker">Made for every celebration</span>
                     <h2 className="section-title section-title-wide">Designed for events of every shape and size.</h2>
                     <p className="section-copy">
-                        The landing flow from the older design is back here, now mapped to the current portals and event actions in this branch.
+                        From weddings to company gatherings, give every guest a private gallery of the moments they are part of.
                     </p>
 
                     <div className="scale-grid">
@@ -307,7 +309,7 @@ function LandingPage() {
                         <div className="setup-image-box">
                             <div className="setup-visual-surface">
                                 <div className="setup-visual-chip">Event setup</div>
-                                <img src={heroCamera} alt="Camera visual for event workflow" />
+                                <img src={heroPhotoCluster} alt="Event photographs connected in a private guest gallery" />
                                 <div className="setup-visual-caption">
                                     One event page can coordinate setup, upload, access, and attendee delivery.
                                 </div>
@@ -530,7 +532,9 @@ function LandingPage() {
             <footer className="landing-footer">
                 <div className="section-shell footer-grid">
                     <div className="footer-brand-block">
-                        <div className="footer-brand-mark">PC</div>
+                        <div className="footer-brand-mark">
+                            <img src="/photocluster-logo.png" alt="" width="48" height="48" />
+                        </div>
                         <p>Smart AI photo sharing for events, with secure attendee access and role-aware delivery.</p>
                         <div className="footer-socials" aria-hidden="true">
                             {socialIcons.map((Icon, index) => (

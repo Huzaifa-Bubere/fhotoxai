@@ -556,7 +556,7 @@ const OrganizerDashboard = () => {
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
-            paddingTop: '70px',
+            paddingTop: '76px',
             boxSizing: 'border-box'
         }}>
             <div style={{ maxWidth: '1600px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', height: '100%' }}>

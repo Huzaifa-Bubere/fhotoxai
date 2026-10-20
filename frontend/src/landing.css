@@ -216,7 +216,7 @@
 
 /* ==================== Hero Section ==================== */
 .landing-page .hero-section {
-  min-height: calc(100dvh - 70px);
+  min-height: calc(100dvh - 76px);
   display: flex;
   flex-direction: column;
   justify-content: center;

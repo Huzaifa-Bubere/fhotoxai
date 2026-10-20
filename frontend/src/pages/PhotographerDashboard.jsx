@@ -165,7 +165,7 @@ const PhotographerDashboard = () => {
     if (loading) return <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F8FAFC' }}><AILoader active={true} text="LOADING" /></div>;
 
     return (
-        <div className="dashboard-themed" style={{ position: 'fixed', inset: 0, zIndex: 40, paddingTop: '70px', boxSizing: 'border-box', overflowY: 'auto' }}>
+        <div className="dashboard-themed" style={{ position: 'fixed', inset: 0, zIndex: 40, paddingTop: '76px', boxSizing: 'border-box', overflowY: 'auto' }}>
 
             {/* Top Navigation Header */}
             <header style={{
