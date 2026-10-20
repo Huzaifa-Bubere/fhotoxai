@@ -401,7 +401,7 @@ const AttendeeDashboard = () => {
     const hasPhotosLoaded = faces.length > 0;
 
     return (
-        <div className="dashboard-themed" style={{ position: 'fixed', inset: 0, zIndex: 40, paddingTop: '70px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div className="dashboard-themed" style={{ position: 'fixed', inset: 0, zIndex: 40, paddingTop: '76px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
             {/* Ambient Background Elements */}
             <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>

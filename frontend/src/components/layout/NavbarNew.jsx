@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Camera, Home, Play, ChevronRight, Zap } from 'lucide-react';
+import { Menu, X, Camera, Home, ChevronRight, Users, CalendarDays, CalendarPlus2 } from 'lucide-react';
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -26,6 +26,9 @@ const Navbar = () => {
     // Navigation Items
     const navItems = [
         { path: '/', label: 'Home', icon: Home },
+        { path: '/organizer/login', label: 'Organizers', icon: CalendarDays },
+        { path: '/photographer/login', label: 'Photographers', icon: Camera },
+        { path: '/attendee/access', label: 'Attendees', icon: Users },
     ];
 
     return (
@@ -33,20 +36,17 @@ const Navbar = () => {
             <div className="navbar-container">
                 <div className="navbar-content">
                     {/* Logo Area */}
-                    <div
-                        className="navbar-brand"
-                        onClick={() => navigate('/')}
-                    >
+                    <NavLink to="/" className="navbar-brand" aria-label="PhotoCluster AI home">
                         <div className="brand-icon">
-                            <Camera size={20} strokeWidth={2.5} color="white" />
+                            <img src="/photocluster-logo.png" alt="" width="48" height="48" />
                         </div>
                         <span className="brand-text">
-                            EventLens
+                            PhotoCluster AI
                         </span>
-                    </div>
+                    </NavLink>
 
                     {/* Desktop Navigation */}
-                    <nav className="navbar-desktop-nav">
+                    <nav className="navbar-desktop-nav" aria-label="Main navigation">
                         {navItems.map((item) => (
                             <NavLink
                                 key={item.path}
@@ -60,6 +60,15 @@ const Navbar = () => {
                             </NavLink>
                         ))}
                     </nav>
+
+                    <button
+                        type="button"
+                        className="navbar-create-event"
+                        onClick={() => navigate('/event-registration')}
+                    >
+                        <CalendarPlus2 size={16} />
+                        Create an event
+                    </button>
 
                     {/* Mobile Menu Button */}
                     <button

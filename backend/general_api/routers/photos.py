@@ -207,6 +207,83 @@ async def get_folder_photos(
         results = execute_query(query, params)
         
     return results
+@router.get("/source")
+async def list_photos_by_source(
+    event_id: int,
+    source: str = "all",
+    limit: int = 60,
+    offset: int = 0,
+    current_user: dict = Depends(require_roles("organizer", "photographer")),
+):
+    """
+    List an event's photos with source provenance.
+
+    source = 'all' | 'uploaded' | 'video'
+    Returns per-source counts so the UI can show backend-derived stats
+    instead of guessing. Video-extracted photos carry source_video_id and
+    source_timestamp_ms from the extraction job.
+    """
+    assert_event_access(current_user, event_id, {"organizer", "photographer"})
+    source = (source or "all").lower()
+    if source not in {"all", "uploaded", "video"}:
+        raise HTTPException(status_code=422, detail="source must be all|uploaded|video")
+
+    where = "event_id = %s"
+    if source == "video":
+        where += " AND source_video_id IS NOT NULL"
+    elif source == "uploaded":
+        where += " AND source_video_id IS NULL"
+
+    limit = max(1, min(int(limit), 200))
+    offset = max(0, int(offset))
+    rows = execute_query(
+        f"""
+        SELECT id, file_path, storage_type, original_filename, mime_type,
+               file_size, upload_date, user_id, source_video_id, source_timestamp_ms
+        FROM photos
+        WHERE {where}
+        ORDER BY upload_date DESC, id DESC
+        LIMIT %s OFFSET %s
+        """,
+        (event_id, limit, offset),
+    )
+    counts_rows = execute_query(
+        """
+        SELECT
+          CASE WHEN source_video_id IS NULL THEN 'uploaded' ELSE 'video' END AS src,
+          COUNT(*) AS count
+        FROM photos WHERE event_id = %s GROUP BY 1
+        """,
+        (event_id,),
+    )
+    counts = {r["src"]: r["count"] for r in (counts_rows or [])}
+    total_rows = execute_query(
+        f"SELECT COUNT(*) AS total FROM photos WHERE {where}", (event_id,)
+    )
+    return {
+        "event_id": event_id,
+        "source": source,
+        "total": total_rows[0]["total"] if total_rows else 0,
+        "source_counts": {
+            "uploaded": counts.get("uploaded", 0),
+            "video": counts.get("video", 0),
+            "all": (counts.get("uploaded", 0) + counts.get("video", 0)),
+        },
+        "photos": [
+            {
+                "id": r["id"],
+                "file_path": (r.get("file_path") or "").replace("\\", "/"),
+                "storage_type": r.get("storage_type") or "local",
+                "original_filename": r.get("original_filename"),
+                "file_size": r.get("file_size") or 0,
+                "upload_date": r.get("upload_date"),
+                "source_video_id": r.get("source_video_id"),
+                "source_timestamp_ms": r.get("source_timestamp_ms"),
+            }
+            for r in (rows or [])
+        ],
+    }
+
 @router.delete("/folders/{folder_name}")
 async def delete_folder(
     folder_name: str,

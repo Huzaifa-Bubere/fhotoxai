@@ -47,12 +47,12 @@ const Footer = ({ style, className }) => {
         }}>
           {/* Brand Column */}
           <div>
-            <div style={{ color: '#F8FAFC', fontWeight: '700', fontSize: '1rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <div style={{ width: '8px', height: '8px', background: '#60A5FA', borderRadius: '50%' }}></div>
-              Event Management Company
+            <div style={{ color: '#F8FAFC', fontWeight: '700', fontSize: '1rem', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <img src="/photocluster-logo.png" alt="" width="44" height="44" style={{ objectFit: 'contain' }} />
+              <span>PhotoCluster AI</span>
             </div>
             <p style={{ color: '#BFDBFE', maxWidth: '300px', lineHeight: '1.5', margin: 0 }}>
-              Advanced biometric identity resolution and event photo management system. Built for scale and precision.
+              Private event galleries with fast AI photo matching for organizers, photographers, and guests.
             </p>
           </div>
 

@@ -39,7 +39,7 @@ function AppLayout({ children, isLanding, className, showNavbar = true }) {
   return (
     <div className="app">
       {showNavbar && <Navbar />}
-      <main className={`main-content ${isLanding ? 'landing-mode' : ''} ${className || ''}`} style={{ paddingTop: showNavbar ? '70px' : '0' }}>
+      <main className={`main-content ${isLanding ? 'landing-mode' : ''} ${showNavbar ? 'with-fixed-navbar' : ''} ${className || ''}`} style={{ paddingTop: showNavbar ? '76px' : '0' }}>
         <AnimatePresence>
           {children}
         </AnimatePresence>

@@ -4,6 +4,7 @@
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap');
+@import './workspace.css'; /* shared design tokens: light surfaces, indigo accent */
 
 :root {
   /* ---- Landing-page palette ---- */
